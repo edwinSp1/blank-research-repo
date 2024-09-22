@@ -12,8 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 
-m = nn.Linear(3*3, 3)
-print(m)
-input = torch.randn(128, 20)
-output = m(input)
-print(output.size())
+# Example of target with class indices
+loss = nn.CrossEntropyLoss()
+input = torch.tensor([0.9, 0.1], dtype=torch.float)
+target = torch.tensor([1, 0], dtype=torch.float)
+output = loss(input, target)
+print(input, target, output)

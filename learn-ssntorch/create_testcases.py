@@ -34,12 +34,18 @@ def create_testcases():
 
             bit = (mask >> i) & 1
             mat[i//3][i%3] = bit
-
-        flattened = []
+        
+        # flatten matrix
+        flat = []
         for row in mat:
             for x in row:
-                flattened.append(x)
-        train_set.append((torch.tensor(np.array(flattened), dtype=torch.float), has_line(mat)))
+                flat.append(x)
+
+        # convert label to probability tensor
+        label = [0, 0]
+        label[has_line(mat)] = 1
+
+        train_set.append((torch.tensor(flat, dtype=torch.float), torch.tensor(label, dtype=torch.float)))
     
     return train_set
 
