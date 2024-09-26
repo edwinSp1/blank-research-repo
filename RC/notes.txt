@@ -1,0 +1,5 @@
+1.  An RC is mathematically identical to a nonlinear vector autoregression (NVAR) machine.
+    a. The feature vector of the NVAR consists of k time-delay observations of the dynamical system to be learned and nonlinear functions of these observations.
+    b. k time-delay observations sound extremely familiear to spiky neural networks... :o
+
+
