@@ -19,11 +19,18 @@ from icecream import ic
 dtype = torch.float
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
+# input constants
+ROWS = 10
+COLS = 10
+TRAIN_SAMPLES = 10000
+TEST_SAMPLES = 2000
+HIDDEN_RATIO = 10
 
-
+# output constants
+OUTPUT_PATH = 'models/10x10Recognizer'
 # Network Architecture
-num_inputs = 3*3
-num_hidden = 100
+num_inputs = ROWS*COLS
+num_hidden = ROWS*COLS*HIDDEN_RATIO
 num_outputs = 2
 
 # Temporal Dynamics
@@ -67,15 +74,17 @@ class Net(nn.Module):
 net = Net().to(device)
 
 if __name__ == '__main__':
-    train_set = create_testcases()
+    train_set = create_testcases(ROWS, COLS, TRAIN_SAMPLES)
+    test_set = create_testcases(ROWS, COLS, TEST_SAMPLES)
 
+    print("train set and test set finished generating")
     loss = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=5e-4, betas=(0.9, 0.999))
 
     num_epochs = 100
 
 
-    for epoch in range(num_epochs):
+    for epoch in range(1, num_epochs+1):
         for matrix_hash, label in train_set:
             # training mode
             net.train()
@@ -99,7 +108,7 @@ if __name__ == '__main__':
         with torch.no_grad():
             correct = 0
             total_loss = 0
-            for matrix_hash, label in train_set:
+            for matrix_hash, label in test_set:
                 # put the tensors onto CUDA
                 matrix_hash = matrix_hash.to(device)
                 label = label.to(device)
@@ -126,9 +135,10 @@ if __name__ == '__main__':
 
             ic(epoch)
             ic(total_loss)
-            percentage = correct/len(train_set)*100
+            percentage = correct/len(test_set)*100
             print('accuracy:', f'{percentage}%')
+            # 99.5% is good enough
             if percentage > 99.5:
                 break
 
-    torch.save(net.state_dict(), 'models/line_recognizer')
+    torch.save(net.state_dict(), OUTPUT_PATH)
