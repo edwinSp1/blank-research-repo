@@ -71,40 +71,41 @@ def create_testcases(rows, cols, num_samples):
         )
 
     # imbalanced dataset
-    if num_samples//2 > amt_has_line:
-        for _ in range(num_samples//2 - amt_has_line):
-            mat = [[0 for i in range(rows)] for j in range(cols)]
+    while len(train_set) // 2 > amt_has_line:
+        mat = [[0 for i in range(rows)] for j in range(cols)]
 
-            # put a random amount of lines into the matrix
-            for line in range(random.randint(1, max(1, rows//3))):
-                if random.random() < 0.5:
-                    add_line(mat, random.randint(0, rows-1), type="horizontal")
-                if random.random() < 0.5:
-                    add_line(mat, random.randint(0, cols-1), type="vertical")
-            
-            fill_remaining(mat)
+        # put a random amount of lines into the matrix
+        for line in range(random.randint(1, max(1, rows//3))):
+            if random.random() < 0.5:
+                add_line(mat, random.randint(0, rows-1), type="horizontal")
+            if random.random() < 0.5:
+                add_line(mat, random.randint(0, cols-1), type="vertical")
+        
+        fill_remaining(mat)
 
-             # convert label to probability tensor
-            label = [0, 0]
-            label[has_line(mat)] = 1
-            train_set.append(
-                (
-                    torch.flatten(torch.tensor(mat, dtype=torch.float)), 
-                    torch.tensor(label, dtype=torch.float)
-                )
+            # convert label to probability tensor
+        label = [0, 0]
+        label[has_line(mat)] = 1
+        amt_has_line += 1
+        train_set.append(
+            (
+                torch.flatten(torch.tensor(mat, dtype=torch.float)), 
+                torch.tensor(label, dtype=torch.float)
             )
+        )
 
     # should be more balanced now, shuffle it and take num_samples out 
     random.shuffle(train_set) 
     return train_set[:num_samples]
 
+# should be around 0.5
 if __name__ == '__main__':
     test_set = create_testcases(3, 3, 1000)
     count_has_line = 0
     for mat, label in test_set:
         if label[1]:
             count_has_line += 1
-    #ic(test_set)
+
     ic(count_has_line/len(test_set))
 
     
