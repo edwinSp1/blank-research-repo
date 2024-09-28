@@ -29,6 +29,8 @@ VALIDATION_SAMPLES = 20
 TRAIN_END_PERCENTAGE = 98
 HIDDEN_RATIO = 10
 
+# If this is set to False, the program will try to get the model checkpoint from OUTPUT_PATH.
+# otherwise it will generate a new checkpoint from scratch
 FIRST_TIME_RUNNING = False
 
 # output constants
