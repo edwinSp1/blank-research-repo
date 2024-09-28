@@ -15,16 +15,21 @@ import itertools
 
 from create_testcases import create_testcases
 from icecream import ic
+import atexit
 
 dtype = torch.float
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
 # input constants
-ROWS = 10
-COLS = 10
-TRAIN_SAMPLES = 10000
-TEST_SAMPLES = 2000
+ROWS = 3
+COLS = 3
+TRAIN_SAMPLES = 100
+TEST_SAMPLES = 20
+VALIDATION_SAMPLES = 20
+TRAIN_END_PERCENTAGE = 98
 HIDDEN_RATIO = 10
+
+FIRST_TIME_RUNNING = False
 
 # output constants
 OUTPUT_PATH = 'models/10x10Recognizer'
@@ -73,18 +78,85 @@ class Net(nn.Module):
 # Load the network onto CUDA if available
 net = Net().to(device)
 
+loss = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(net.parameters(), lr=5e-4, betas=(0.9, 0.999))
+epoch = 0
+
+if not FIRST_TIME_RUNNING:
+    # reload from checkpoint
+    checkpoint = torch.load(OUTPUT_PATH, weights_only=False)
+    epoch = 0
+
+    net.load_state_dict(checkpoint['state_dict'])
+    epoch = checkpoint['epoch']
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    loss = checkpoint['loss']
+    test_set = checkpoint['test_set']
+    train_set = checkpoint['train_set']
+
+def validate():
+    validation_set = create_testcases(ROWS, COLS, num_samples=VALIDATION_SAMPLES)
+    total_loss, accuracy = test_loop(validation_set)
+
+    return total_loss, accuracy
+
+def test_loop(test_set):
+    with torch.no_grad():
+        correct = 0
+        total_loss = 0
+        for matrix_hash, label in test_set:
+            # put the tensors onto CUDA
+            matrix_hash = matrix_hash.to(device)
+            label = label.to(device)
+
+            # get model prediction
+            mem_rec, spk_rec = net(matrix_hash)
+            
+            # calculate loss
+            loss_val = torch.zeros((1), dtype=dtype, device=device)
+            amt = torch.zeros((2), dtype=dtype, device=device)
+            for step in range(num_steps):
+                loss_val += loss(mem_rec[step], label)
+                amt += mem_rec[step]
+            
+            amt_array = list(amt.numpy())
+            label_array = list(label.numpy())
+            ans = 0
+            if label[1] == 1:
+                ans = 1
+            # higher probability than wrong answer
+            if amt_array[ans] > amt_array[ans^1]:
+                correct += 1
+            total_loss += loss_val
+
+        percentage = correct/len(test_set)*100
+        return total_loss, percentage
+
+
 if __name__ == '__main__':
-    train_set = create_testcases(ROWS, COLS, TRAIN_SAMPLES)
-    test_set = create_testcases(ROWS, COLS, TEST_SAMPLES)
+
+    if FIRST_TIME_RUNNING:
+        train_set = create_testcases(ROWS, COLS, TRAIN_SAMPLES)
+        test_set = create_testcases(ROWS, COLS, TEST_SAMPLES)
 
     print("train set and test set finished generating")
-    loss = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=5e-4, betas=(0.9, 0.999))
 
-    num_epochs = 100
+    # save model on exit
+    def exit():
+        torch.save({
+            "state_dict": net.state_dict(),
+            "epoch": epoch,
+            "optimizer_state_dict": optimizer.state_dict(),
+            "loss": loss,
+            "train_set": train_set,
+            "test_set": test_set
+        }, OUTPUT_PATH)
+        print("model checkpoint saved to file.")
 
+    atexit.register(exit)
+    while True:
+        
 
-    for epoch in range(1, num_epochs+1):
         for matrix_hash, label in train_set:
             # training mode
             net.train()
@@ -104,41 +176,12 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss_val.backward()
             optimizer.step()
-        
-        with torch.no_grad():
-            correct = 0
-            total_loss = 0
-            for matrix_hash, label in test_set:
-                # put the tensors onto CUDA
-                matrix_hash = matrix_hash.to(device)
-                label = label.to(device)
 
-                # get model prediction
-                mem_rec, spk_rec = net(matrix_hash)
-                
-                # calculate loss
-                loss_val = torch.zeros((1), dtype=dtype, device=device)
-                amt = torch.zeros((2), dtype=dtype, device=device)
-                for step in range(num_steps):
-                    loss_val += loss(mem_rec[step], label)
-                    amt += mem_rec[step]
-                
-                amt_array = list(amt.numpy())
-                label_array = list(label.numpy())
-                ans = 0
-                if label[1] == 1:
-                    ans = 1
-                # higher probability than wrong answer
-                if amt_array[ans] > amt_array[ans^1]:
-                    correct += 1
-                total_loss += loss_val
+        # test model
+        total_loss, accuracy = test_loop(test_set)
+        ic(epoch)
+        ic(total_loss)
+        ic(accuracy)
 
-            ic(epoch)
-            ic(total_loss)
-            percentage = correct/len(test_set)*100
-            print('accuracy:', f'{percentage}%')
-            # 99.5% is good enough
-            if percentage > 99.5:
-                break
+        epoch += 1
 
-    torch.save(net.state_dict(), OUTPUT_PATH)
