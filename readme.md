@@ -1,5 +1,12 @@
 # Research Repository for RC and snnTorch.
 
+# Quickstart
+
+```
+pip install -r requirements.txt
+cd learn-snntorch
+python model.py
+```
 # 3x3 Case
 
 ## Overtraining Avoidance
@@ -7,7 +14,7 @@ To avoid overtraining, I will probably use a test set and a train set. If the mo
 
 ## Input/Output
 The input is a tensor representing the flattened matrix, ex: 
-$$tensor([1, 0, 0, 1, 1, 0, 1, 0, 1])$$
+$tensor([1, 0, 0, 1, 1, 0, 1, 0, 1])$
 
 It is then transformed similarly to visualizations/splt.animator.mp4.
 
