@@ -21,17 +21,16 @@ dtype = torch.float
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
 # input constants
-ROWS = 3
-COLS = 3
-TRAIN_SAMPLES = 100
-TEST_SAMPLES = 20
+ROWS = 10
+COLS = 10
+TRAIN_SAMPLES = 100000
+TEST_SAMPLES = 20000
 VALIDATION_SAMPLES = 20
-TRAIN_END_PERCENTAGE = 98
 HIDDEN_RATIO = 10
 
 # If this is set to False, the program will try to get the model checkpoint from OUTPUT_PATH.
 # otherwise it will generate a new checkpoint from scratch
-FIRST_TIME_RUNNING = False
+FIRST_TIME_RUNNING = True
 
 # output constants
 OUTPUT_PATH = 'models/10x10Recognizer'
