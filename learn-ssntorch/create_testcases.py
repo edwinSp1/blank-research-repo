@@ -62,10 +62,10 @@ def create_testcases(rows, cols, num_samples):
         label[has_line(mat)] = 1
         if label[1]:
             amt_has_line += 1
-
+        mat = [[mat]]
         train_set.append(
             (
-                torch.flatten(torch.tensor(mat, dtype=torch.float)), 
+                torch.tensor(mat, dtype=torch.float), 
                 torch.tensor(label, dtype=torch.float)
             )
         )
@@ -87,9 +87,11 @@ def create_testcases(rows, cols, num_samples):
         label = [0, 0]
         label[has_line(mat)] = 1
         amt_has_line += 1
+
+        mat = [[mat]]
         train_set.append(
             (
-                torch.flatten(torch.tensor(mat, dtype=torch.float)), 
+                torch.tensor(mat, dtype=torch.float), 
                 torch.tensor(label, dtype=torch.float)
             )
         )
@@ -100,7 +102,8 @@ def create_testcases(rows, cols, num_samples):
 
 # should be around 0.5
 if __name__ == '__main__':
-    test_set = create_testcases(3, 3, 1000)
+    test_set = create_testcases(3, 3, 10)
+    ic(test_set)
     count_has_line = 0
     for mat, label in test_set:
         if label[1]:

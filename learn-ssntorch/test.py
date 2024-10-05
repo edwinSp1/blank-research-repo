@@ -1,7 +1,5 @@
 
-from model import *
-
-total_loss, accuracy = validate()
-
-ic(total_loss)
-ic(accuracy)
+#from model import *
+import torch
+t = torch.tensor([1, 0, 0, 0])
+print(list(int(x) for x in t))
